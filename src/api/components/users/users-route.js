@@ -2,8 +2,8 @@ const express = require('express');
 
 const authenticationMiddleware = require('../../middlewares/authentication-middleware');
 const celebrate = require('../../../core/celebrate-wrappers');
-const usersControllers = require('./users-controller');
-const usersValidator = require('./users-validator');
+const usersControllers = require('./users-controller'); // utk mengonteol user-related operation
+const usersValidator = require('./users-validator'); // utk memvalidasi
 
 const route = express.Router();
 
@@ -34,4 +34,11 @@ module.exports = (app) => {
 
   // Delete user
   route.delete('/:id', authenticationMiddleware, usersControllers.deleteUser);
+
+  route.patch(
+    '/:id/change-pasword',
+    authenticationMiddleware,
+    celebrate(usersValidator.changePassword),
+    usersControllers.changePassword
+  );
 };

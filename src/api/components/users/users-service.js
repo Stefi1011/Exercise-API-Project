@@ -1,15 +1,16 @@
-const usersRepository = require('./users-repository');
-const { hashPassword } = require('../../../utils/password');
+const usersRepository = require('./users-repository'); // function ke db utk CRUD
+const { hashPassword } = require('../../../utils/password'); // buat hashing
 
 /**
  * Get list of users
  * @returns {Array}
  */
 async function getUsers() {
-  const users = await usersRepository.getUsers();
+  const users = await usersRepository.getUsers(); // mengambil alist of user
 
   const results = [];
   for (let i = 0; i < users.length; i += 1) {
+    // mauskkin user dr array users ke array results
     const user = users[i];
     results.push({
       id: user.id,
@@ -50,6 +51,9 @@ async function getUser(id) {
  */
 async function createUser(name, email, password) {
   // Hash password
+  // if (await usersRepository.isEmailTaken(email)) {
+  //   throw new Error('Email already taken'); // Throw an error if email is already taken
+  // }
   const hashedPassword = await hashPassword(password);
 
   try {
@@ -76,6 +80,9 @@ async function updateUser(id, name, email) {
     return null;
   }
 
+  if (await usersRepository.isEmailTaken(email, id)) {
+    throw new Error('Email already taken');
+  }
   try {
     await usersRepository.updateUser(id, name, email);
   } catch (err) {
@@ -107,10 +114,33 @@ async function deleteUser(id) {
   return true;
 }
 
+async function isEmailTaken(email) {
+  return await usersRepository.isEmailTaken(email);
+}
+
+async function changePassword(id, password) {
+  // cari id
+  const user = await usersRepository.getUser(id);
+  // kalau gada maka:
+  if (!user) {
+    return null;
+  }
+
+  // kalau ada, maka ganti passwordd
+  try {
+    await usersRepository.changePassword(id, password);
+  } catch (err) {
+    return null;
+  }
+
+  return true;
+}
 module.exports = {
   getUsers,
   getUser,
   createUser,
   updateUser,
   deleteUser,
+  isEmailTaken,
+  changePassword,
 };
