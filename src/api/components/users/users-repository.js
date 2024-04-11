@@ -94,7 +94,7 @@ async function changePassword(id, password) {
     },
     {
       $set: {
-        password,
+        password: password,
       },
     }
   );

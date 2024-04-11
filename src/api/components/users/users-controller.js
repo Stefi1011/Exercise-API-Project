@@ -165,24 +165,34 @@ async function deleteUser(request, response, next) {
 async function changePassword(request, response, next) {
   try {
     const id = request.params.id;
-    const password = request.params.password;
-    const new_password = request.params.new_password;
-    const new_password_confirm = request.params.new_password_confirm;
+    const password = request.body.password;
+    const new_password = request.body.new_password;
+    const new_password_confirmation = request.body.new_password_confirmation;
 
-    // cek berhasil change/ engga
-    const success = await usersService.changePassword(id, new_password);
-
-    if (new_password != new_password_confirm) {
+    // cek new_password sama new_password_confirmation
+    if (new_password !== new_password_confirmation) {
       throw errorResponder(
         errorTypes.INVALID_PASSWORD,
         'Password and password confirmation do not match'
       );
     }
 
+    // cek password bener/ ga
+    const isPasswordCorrect = await usersService.checkPassword(id, password);
+    if (!isPasswordCorrect) {
+      throw errorResponder(
+        errorTypes.INVALID_PASSWORD,
+        'Incorrect old password'
+      );
+    }
+
+    // Proceed to change the password
+    const success = await usersService.changePassword(id, new_password);
+
     if (!success) {
       throw errorResponder(
         errorTypes.UNPROCESSABLE_ENTITY,
-        'Failed to create user'
+        'Failed to change password'
       );
     }
 
@@ -191,7 +201,6 @@ async function changePassword(request, response, next) {
     return next(error);
   }
 }
-
 module.exports = {
   getUsers,
   getUser,

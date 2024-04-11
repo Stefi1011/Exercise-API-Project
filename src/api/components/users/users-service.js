@@ -1,5 +1,5 @@
 const usersRepository = require('./users-repository'); // function ke db utk CRUD
-const { hashPassword } = require('../../../utils/password'); // buat hashing
+const { hashPassword, passwordMatched } = require('../../../utils/password'); // buat hashing
 
 /**
  * Get list of users
@@ -114,27 +114,65 @@ async function deleteUser(id) {
   return true;
 }
 
+/**
+ * isEmailTaken
+ * @param {string} email - User email
+ * @returns {boolean}
+ */
 async function isEmailTaken(email) {
   return await usersRepository.isEmailTaken(email);
 }
 
+/**
+ * Change Password
+ * @param {string} id - User ID
+ * @param {string} password - User password
+ * @returns {boolean}
+ */
 async function changePassword(id, password) {
-  // cari id
-  const user = await usersRepository.getUser(id);
-  // kalau gada maka:
-  if (!user) {
-    return null;
-  }
-
-  // kalau ada, maka ganti passwordd
   try {
-    await usersRepository.changePassword(id, password);
-  } catch (err) {
-    return null;
-  }
+    // Cari user berdasarkan ID
+    const user = await usersRepository.getUser(id);
 
-  return true;
+    // Jika user tidak ditemukan, kembalikan null
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Buat hash untuk password baru
+    const hashedPassword = await hashPassword(password);
+
+    // Ubah password pengguna di repository
+    await usersRepository.changePassword(id, hashedPassword);
+
+    // Jika berhasil, kembalikan true
+    return true;
+  } catch (error) {
+    throw error;
+  }
 }
+
+/**
+ * Check Password
+ * @param {string} userId - User ID
+ * @param {string} password - User password
+ * @returns {boolean}
+ */
+
+async function checkPassword(id, password) {
+  // Retrieve user from database
+  const user = await usersRepository.getUser(id);
+
+  const userPassword = user ? user.password : '<RANDOM_PASSWORD_FILLER>';
+  // const passwordHashed = await hashPassword(password);
+  const passwordChecked = await passwordMatched(password, userPassword);
+
+  if (passwordChecked) {
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
   getUsers,
   getUser,
@@ -143,4 +181,5 @@ module.exports = {
   deleteUser,
   isEmailTaken,
   changePassword,
+  checkPassword,
 };
